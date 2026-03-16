@@ -7,6 +7,7 @@ import CRMScreen from '../screens/CRMScreen';
 import BudgetsScreen from '../screens/BudgetsScreen';
 import InvoicesScreen from '../screens/InvoicesScreen';
 import SavingsScreen from '../screens/SavingsScreen';
+import DebugScreen from '../screens/DebugScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -26,6 +27,7 @@ export default function AppNavigator() {
             else if (route.name === 'Budgets') iconName = 'account-cash';
             else if (route.name === 'Invoices') iconName = 'file-document';
             else if (route.name === 'Settings') iconName = 'cog';
+            else if (route.name === 'Debug') iconName = 'bug';
             return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
           },
           tabBarActiveTintColor: '#007AFF',
@@ -38,6 +40,7 @@ export default function AppNavigator() {
       <Tab.Screen name="Budgets" component={BudgetsScreen} options={{ title: 'Budgets' }}/>
       <Tab.Screen name="Invoices" component={InvoicesScreen} options={{ title: 'Invoices' }}/>
       <Tab.Screen name="Savings" component={SavingsScreen} options={{ title: 'Tabungan' }}/>
+      <Tab.Screen name="Debug" component={DebugScreen} options={{ title: 'Debug' }}/>
         <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       </Tab.Navigator>
     </NavigationContainer>
