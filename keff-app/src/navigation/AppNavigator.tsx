@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import DashboardScreen from '../screens/DashboardScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import CRMScreen from '../screens/CRMScreen';
+import SavingsScreen from '../screens/SavingsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -19,6 +20,7 @@ export default function AppNavigator() {
             if (route.name === 'Dashboard') iconName = 'view-dashboard';
             else if (route.name === 'Expenses') iconName = 'cash-multiple';
             else if (route.name === 'CRM') iconName = 'contacts';
+            else if (route.name === 'Savings') iconName = 'piggy-bank';
             else if (route.name === 'Settings') iconName = 'cog';
             return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
           },
@@ -29,6 +31,7 @@ export default function AppNavigator() {
         <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
         <Tab.Screen name="Expenses" component={ExpensesScreen} options={{ title: 'Expenses' }} />
         <Tab.Screen name="CRM" component={CRMScreen} options={{ title: 'CRM' }} />
+      <Tab.Screen name="Savings" component={SavingsScreen} options={{ title: 'Tabungan' }}/>
         <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       </Tab.Navigator>
     </NavigationContainer>
