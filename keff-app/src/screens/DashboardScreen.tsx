@@ -9,7 +9,7 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.transaction((tx) => {
+      db.withTransaction((tx) => {
         tx.executeSql(
           'SELECT SUM(amount) as total FROM expenses',
           [],

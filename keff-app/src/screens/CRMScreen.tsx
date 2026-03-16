@@ -21,7 +21,7 @@ export default function CRMScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.transaction((tx) => {
+      db.withTransaction((tx) => {
         tx.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
           setContacts(rows.raw());
         });
@@ -34,7 +34,7 @@ export default function CRMScreen() {
 
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
-    db.transaction((tx) => {
+    db.withTransaction((tx) => {
       if (current.id) {
         tx.executeSql(
           'UPDATE contacts SET name=?, email=?, phone=?, company=?, notes=? WHERE id=?',

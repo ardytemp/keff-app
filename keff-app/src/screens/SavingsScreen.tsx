@@ -21,7 +21,7 @@ export default function SavingsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.transaction((tx) => {
+      db.withTransaction((tx) => {
         tx.executeSql('SELECT * FROM savings ORDER BY deadline', [], (_, { rows }) => {
           setSavings(rows.raw());
         });
@@ -35,7 +35,7 @@ export default function SavingsScreen() {
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
     if (current.target_amount == null) return Alert.alert('Error', 'Target amount required');
-    db.transaction((tx) => {
+    db.withTransaction((tx) => {
       if (current.id) {
         tx.executeSql(
           'UPDATE savings SET name=?, target_amount=?, current_amount=?, deadline=?, notes=? WHERE id=?',
@@ -54,7 +54,7 @@ export default function SavingsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete this savings goal?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.transaction((tx) => tx.executeSql('DELETE FROM savings WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.withTransaction((tx) => tx.executeSql('DELETE FROM savings WHERE id=?', [id])) },
     ]);
   };
 
@@ -66,7 +66,7 @@ export default function SavingsScreen() {
         onPress: (amountStr) => {
           const amount = parseFloat(amountStr || '0');
           if (amount <= 0) return;
-          db.transaction((tx) => {
+          db.withTransaction((tx) => {
             tx.executeSql('UPDATE savings SET current_amount = current_amount + ? WHERE id = ?', [amount, id]);
           });
         },
