@@ -15,14 +15,39 @@ interface Budget {
 
 export default function BudgetsScreen() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [spending, setSpending] = useState<{ [key: string]: number }>({});
   const [dialogVisible, setDialogVisible] = useState(false);
   const [current, setCurrent] = useState<Partial<Budget>>({});
 
+  const loadBudgets = () => {
+    db.transaction((tx) => {
+      tx.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
+    });
+  };
+
+  const loadSpending = () => {
+    const today = new Date();
+    const monthStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+    db.transaction((tx) => {
+      tx.executeSql(
+        'SELECT category, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY category',
+        [monthStart],
+        (_, { rows }) => {
+          const map: { [k: string]: number } = {};
+          for (let i = 0; i < rows.length; i++) {
+            const item = rows.item(i);
+            map[item.category] = item.total || 0;
+          }
+          setSpending(map);
+        }
+      );
+    });
+  };
+
   useFocusEffect(
     React.useCallback(() => {
-      db.transaction((tx) => {
-        tx.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
-      });
+      loadBudgets();
+      loadSpending();
     }, [])
   );
 
@@ -38,6 +63,7 @@ export default function BudgetsScreen() {
         tx.executeSql('INSERT INTO budgets (category, amount, period, start_date) VALUES (?, ?, ?, ?)', [current.category, current.amount, current.period, current.start_date || '']);
       }
     });
+    loadBudgets();
     setDialogVisible(false);
   };
 
@@ -48,16 +74,6 @@ export default function BudgetsScreen() {
     ]);
   };
 
-  const getSpending = (category: string) => {
-    const today = new Date();
-    const monthStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
-    let spent = 0;
-    db.transaction((tx) => {
-      tx.executeSql('SELECT SUM(amount) as total FROM expenses WHERE category = ? AND date >= ?', [category, monthStart], (_, { rows }) => { spent = rows.item(0).total || 0; });
-    });
-    return spent;
-  };
-
   return (
     <View style={styles.container}>
       <Button mode="contained" onPress={openAdd} style={styles.addBtn}>Add Budget</Button>
@@ -65,7 +81,7 @@ export default function BudgetsScreen() {
         data={budgets}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => {
-          const spent = getSpending(item.category);
+          const spent = spending[item.category] || 0;
           const progress = item.amount > 0 ? spent / item.amount : 0;
           return (
             <Card style={styles.card}>

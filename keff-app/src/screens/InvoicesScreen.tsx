@@ -72,6 +72,14 @@ export default function InvoicesScreen() {
     switch(s) { case 'paid': return 'green'; case 'sent': return 'blue'; case 'overdue': return 'red'; case 'draft': return 'gray'; default: return 'orange'; }
   };
 
+  const pickContact = () => {
+    Alert.alert(
+      "Select Contact",
+      null,
+      contacts.map(c => ({ text: c.name, onPress: () => setCurrent({ ...current, contact_id: c.id }) }))
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Button mode="contained" onPress={openAdd} style={styles.addBtn}>Create Invoice</Button>
@@ -105,11 +113,7 @@ export default function InvoicesScreen() {
             <TextInput label="Due Date" value={current.date_due || ''} onChangeText={(t) => setCurrent({ ...current, date_due: t })} />
             <TextInput label="Notes" value={current.notes || ''} onChangeText={(t) => setCurrent({ ...current, notes: t })} multiline />
             <Text style={{marginTop: 8}}>Contact:</Text>
-            <Button onPress={() => {
-              Alert.ArrowActionSheet('Select Contact', contacts.map(c => c.name), (i) => {
-                setCurrent({ ...current, contact_id: contacts[i].id });
-              });
-            }}>{current.contact_id ? contacts.find(c => c.id === current.contact_id)?.name : 'Choose Contact'}</Button>
+            <Button onPress={pickContact}>{current.contact_id ? contacts.find(c => c.id === current.contact_id)?.name : 'Choose Contact'}</Button>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDialogVisible(false)}>Cancel</Button>
