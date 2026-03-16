@@ -20,7 +20,7 @@ export default function BudgetsScreen() {
   const [current, setCurrent] = useState<Partial<Budget>>({});
 
   const loadBudgets = () => {
-    db.withTransaction((tx) => {
+    db.withTransactionSync((tx) => {
       tx.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
     });
   };
@@ -28,7 +28,7 @@ export default function BudgetsScreen() {
   const loadSpending = () => {
     const today = new Date();
     const monthStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
-    db.withTransaction((tx) => {
+    db.withTransactionSync((tx) => {
       tx.executeSql(
         'SELECT category, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY category',
         [monthStart],
@@ -56,7 +56,7 @@ export default function BudgetsScreen() {
 
   const save = () => {
     if (!current.category || !current.amount) return Alert.alert('Error', 'Category and amount required');
-    db.withTransaction((tx) => {
+    db.withTransactionSync((tx) => {
       if (current.id) {
         tx.executeSql('UPDATE budgets SET category=?, amount=?, period=?, start_date=? WHERE id=?', [current.category, current.amount, current.period, current.start_date || '', current.id]);
       } else {
@@ -70,7 +70,7 @@ export default function BudgetsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete budget?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransaction((tx) => tx.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.withTransactionSync((tx) => tx.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
     ]);
   };
 

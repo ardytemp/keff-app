@@ -24,14 +24,14 @@ export default function InvoicesScreen() {
   const [contacts, setContacts] = useState<{id: number; name: string}[]>([]);
 
   useEffect(() => {
-    db.withTransaction((tx) => {
+    db.withTransactionSync((tx) => {
       tx.executeSql('SELECT id, name FROM contacts', [], (_, { rows }) => setContacts(rows.raw()));
     });
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransaction((tx) => {
+      db.withTransactionSync((tx) => {
         tx.executeSql(`
           SELECT i.*, c.name as contact_name FROM invoices i
           LEFT JOIN contacts c ON i.contact_id = c.id
@@ -44,15 +44,15 @@ export default function InvoicesScreen() {
   const openAdd = () => { setCurrent({ status: 'draft', date_issued: new Date().toISOString().split('T')[0] }); setDialogVisible(true); };
   const openEdit = (i: Invoice) => { setCurrent({ ...i }); setDialogVisible(true); };
   const openSend = (id: number) => {
-    db.withTransaction((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', i.id]));
+    db.withTransactionSync((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', i.id]));
   };
   const openPaid = (id: number) => {
-    db.withTransaction((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', i.id]));
+    db.withTransactionSync((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', i.id]));
   };
 
   const save = () => {
     if (!current.invoice_number || !current.amount || !current.date_issued) return Alert.alert('Error', 'Number, amount, date required');
-    db.withTransaction((tx) => {
+    db.withTransactionSync((tx) => {
       if (current.id) {
         tx.executeSql(
           'UPDATE invoices SET contact_id=?, invoice_number=?, amount=?, date_issued=?, date_due=?, status=?, notes=? WHERE id=?',

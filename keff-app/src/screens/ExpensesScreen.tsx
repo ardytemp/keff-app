@@ -20,7 +20,7 @@ export default function ExpensesScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransaction((tx) => {
+      db.withTransactionSync((tx) => {
         tx.executeSql('SELECT * FROM expenses ORDER BY date DESC', [], (_, { rows }) => {
           setExpenses(rows.raw());
         });
@@ -42,7 +42,7 @@ export default function ExpensesScreen() {
       const result = await DocumentPicker.getDocumentAsync({ type: 'text/csv' });
       if (result.canceled) return;
       const imported = await importFromCSV(result.assets[0].uri);
-      db.withTransaction((tx) => {
+      db.withTransactionSync((tx) => {
         imported.forEach((exp: any) => {
           tx.executeSql(
             'INSERT INTO expenses (amount, category, description, date) VALUES (?, ?, ?, ?)',
