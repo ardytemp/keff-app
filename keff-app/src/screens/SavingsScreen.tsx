@@ -21,8 +21,8 @@ export default function SavingsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync((tx) => {
-        tx.executeSql('SELECT * FROM savings ORDER BY deadline', [], (_, { rows }) => {
+      db.withTransactionSync(() => {
+        db.executeSql('SELECT * FROM savings ORDER BY deadline', [], (_, { rows }) => {
           setSavings(rows.raw());
         });
       });
@@ -35,14 +35,14 @@ export default function SavingsScreen() {
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
     if (current.target_amount == null) return Alert.alert('Error', 'Target amount required');
-    db.withTransactionSync((tx) => {
+    db.withTransactionSync(() => {
       if (current.id) {
-        tx.executeSql(
+        db.executeSql(
           'UPDATE savings SET name=?, target_amount=?, current_amount=?, deadline=?, notes=? WHERE id=?',
           [current.name, current.target_amount, current.current_amount, current.deadline || '', current.notes || '', current.id]
         );
       } else {
-        tx.executeSql(
+        db.executeSql(
           'INSERT INTO savings (name, target_amount, current_amount, deadline, notes) VALUES (?, ?, ?, ?, ?)',
           [current.name, current.target_amount, current.current_amount, current.deadline || '', current.notes || '']
         );
@@ -54,7 +54,7 @@ export default function SavingsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete this savings goal?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransactionSync((tx) => tx.executeSql('DELETE FROM savings WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM savings WHERE id=?', [id])) },
     ]);
   };
 
@@ -66,8 +66,8 @@ export default function SavingsScreen() {
         onPress: (amountStr) => {
           const amount = parseFloat(amountStr || '0');
           if (amount <= 0) return;
-          db.withTransactionSync((tx) => {
-            tx.executeSql('UPDATE savings SET current_amount = current_amount + ? WHERE id = ?', [amount, id]);
+          db.withTransactionSync(() => {
+            db.executeSql('UPDATE savings SET current_amount = current_amount + ? WHERE id = ?', [amount, id]);
           });
         },
       },

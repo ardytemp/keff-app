@@ -9,30 +9,18 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync((tx) => {
-        tx.executeSql(
-          'SELECT SUM(amount) as total FROM expenses',
-          [],
-          (_, { rows }) => {
-            const totalExp = rows.item(0).total || 0;
-            setStats((s) => ({ ...s, totalExpenses: totalExp }));
-          }
-        );
-        tx.executeSql(
-          'SELECT SUM(amount) as total FROM transactions WHERE type = "income"',
-          [],
-          (_, { rows }) => {
-            const totalInc = rows.item(0).total || 0;
-            setStats((s) => ({ ...s, totalIncome: totalInc }));
-          }
-        );
-        tx.executeSql(
-          'SELECT COUNT(*) as count FROM contacts',
-          [],
-          (_, { rows }) => {
-            setStats((s) => ({ ...s, contactCount: rows.item(0).count }));
-          }
-        );
+      db.withTransactionSync(() => {
+        db.executeSql('SELECT SUM(amount) as total FROM expenses', [], (_, { rows }) => {
+          const totalExp = rows.item(0).total || 0;
+          setStats((s) => ({ ...s, totalExpenses: totalExp }));
+        });
+        db.executeSql('SELECT SUM(amount) as total FROM transactions WHERE type = "income"', [], (_, { rows }) => {
+          const totalInc = rows.item(0).total || 0;
+          setStats((s) => ({ ...s, totalIncome: totalInc }));
+        });
+        db.executeSql('SELECT COUNT(*) as count FROM contacts', [], (_, { rows }) => {
+          setStats((s) => ({ ...s, contactCount: rows.item(0).count }));
+        });
       });
     }, [])
   );

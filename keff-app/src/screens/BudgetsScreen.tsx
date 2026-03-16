@@ -20,16 +20,16 @@ export default function BudgetsScreen() {
   const [current, setCurrent] = useState<Partial<Budget>>({});
 
   const loadBudgets = () => {
-    db.withTransactionSync((tx) => {
-      tx.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
+    db.withTransactionSync(() => {
+      db.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
     });
   };
 
   const loadSpending = () => {
     const today = new Date();
     const monthStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
-    db.withTransactionSync((tx) => {
-      tx.executeSql(
+    db.withTransactionSync(() => {
+      db.executeSql(
         'SELECT category, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY category',
         [monthStart],
         (_, { rows }) => {
@@ -56,11 +56,11 @@ export default function BudgetsScreen() {
 
   const save = () => {
     if (!current.category || !current.amount) return Alert.alert('Error', 'Category and amount required');
-    db.withTransactionSync((tx) => {
+    db.withTransactionSync(() => {
       if (current.id) {
-        tx.executeSql('UPDATE budgets SET category=?, amount=?, period=?, start_date=? WHERE id=?', [current.category, current.amount, current.period, current.start_date || '', current.id]);
+        db.executeSql('UPDATE budgets SET category=?, amount=?, period=?, start_date=? WHERE id=?', [current.category, current.amount, current.period, current.start_date || '', current.id]);
       } else {
-        tx.executeSql('INSERT INTO budgets (category, amount, period, start_date) VALUES (?, ?, ?, ?)', [current.category, current.amount, current.period, current.start_date || '']);
+        db.executeSql('INSERT INTO budgets (category, amount, period, start_date) VALUES (?, ?, ?, ?)', [current.category, current.amount, current.period, current.start_date || '']);
       }
     });
     loadBudgets();
@@ -70,7 +70,7 @@ export default function BudgetsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete budget?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransactionSync((tx) => tx.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
     ]);
   };
 

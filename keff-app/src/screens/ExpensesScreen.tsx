@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import * as DocumentPicker from 'expo-document-picker';
 import { Button } from 'react-native-paper';
+import * as DocumentPicker from 'expo-document-picker';
 import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 import { exportToCSV, importFromCSV } from '../utils/csv';
@@ -20,8 +20,8 @@ export default function ExpensesScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync((tx) => {
-        tx.executeSql('SELECT * FROM expenses ORDER BY date DESC', [], (_, { rows }) => {
+      db.withTransactionSync(() => {
+        db.executeSql('SELECT * FROM expenses ORDER BY date DESC', [], (_, { rows }) => {
           setExpenses(rows.raw());
         });
       });
@@ -42,9 +42,9 @@ export default function ExpensesScreen() {
       const result = await DocumentPicker.getDocumentAsync({ type: 'text/csv' });
       if (result.canceled) return;
       const imported = await importFromCSV(result.assets[0].uri);
-      db.withTransactionSync((tx) => {
+      db.withTransactionSync(() => {
         imported.forEach((exp: any) => {
-          tx.executeSql(
+          db.executeSql(
             'INSERT INTO expenses (amount, category, description, date) VALUES (?, ?, ?, ?)',
             [exp.amount, exp.category, exp.description, exp.date]
           );

@@ -24,15 +24,15 @@ export default function InvoicesScreen() {
   const [contacts, setContacts] = useState<{id: number; name: string}[]>([]);
 
   useEffect(() => {
-    db.withTransactionSync((tx) => {
-      tx.executeSql('SELECT id, name FROM contacts', [], (_, { rows }) => setContacts(rows.raw()));
+    db.withTransactionSync(() => {
+      db.executeSql('SELECT id, name FROM contacts', [], (_, { rows }) => setContacts(rows.raw()));
     });
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync((tx) => {
-        tx.executeSql(`
+      db.withTransactionSync(() => {
+        db.executeSql(`
           SELECT i.*, c.name as contact_name FROM invoices i
           LEFT JOIN contacts c ON i.contact_id = c.id
           ORDER BY i.date_issued DESC
@@ -44,22 +44,26 @@ export default function InvoicesScreen() {
   const openAdd = () => { setCurrent({ status: 'draft', date_issued: new Date().toISOString().split('T')[0] }); setDialogVisible(true); };
   const openEdit = (i: Invoice) => { setCurrent({ ...i }); setDialogVisible(true); };
   const openSend = (id: number) => {
-    db.withTransactionSync((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', i.id]));
+    db.withTransactionSync(() => {
+      db.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', id]);
+    });
   };
   const openPaid = (id: number) => {
-    db.withTransactionSync((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', i.id]));
+    db.withTransactionSync(() => {
+      db.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', id]);
+    });
   };
 
   const save = () => {
     if (!current.invoice_number || !current.amount || !current.date_issued) return Alert.alert('Error', 'Number, amount, date required');
-    db.withTransactionSync((tx) => {
+    db.withTransactionSync(() => {
       if (current.id) {
-        tx.executeSql(
+        db.executeSql(
           'UPDATE invoices SET contact_id=?, invoice_number=?, amount=?, date_issued=?, date_due=?, status=?, notes=? WHERE id=?',
           [current.contact_id, current.invoice_number, current.amount, current.date_issued, current.date_due || '', current.status, current.notes || '', current.id]
         );
       } else {
-        tx.executeSql(
+        db.executeSql(
           'INSERT INTO invoices (contact_id, invoice_number, amount, date_issued, date_due, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [current.contact_id, current.invoice_number, current.amount, current.date_issued, current.date_due || '', current.status, current.notes || '']
         );

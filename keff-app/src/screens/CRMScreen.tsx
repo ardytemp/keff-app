@@ -19,10 +19,18 @@ export default function CRMScreen() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [current, setCurrent] = useState<Partial<Contact>>({});
 
+  useEffect(() => {
+    db.withTransactionSync(() => {
+      db.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
+        setContacts(rows.raw());
+      });
+    });
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync((tx) => {
-        tx.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
+      db.withTransactionSync(() => {
+        db.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
           setContacts(rows.raw());
         });
       });
@@ -34,20 +42,27 @@ export default function CRMScreen() {
 
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
-    db.withTransactionSync((tx) => {
+    db.withTransactionSync(() => {
       if (current.id) {
-        tx.executeSql(
+        db.executeSql(
           'UPDATE contacts SET name=?, email=?, phone=?, company=?, notes=? WHERE id=?',
           [current.name, current.email || '', current.phone || '', current.company || '', current.notes || '', current.id]
         );
       } else {
-        tx.executeSql(
+        db.executeSql(
           'INSERT INTO contacts (name, email, phone, company, notes) VALUES (?, ?, ?, ?, ?)',
           [current.name, current.email || '', current.phone || '', current.company || '', current.notes || '']
         );
       }
     });
     setDialogVisible(false);
+  };
+
+  const deleteItem = (id: number) => {
+    Alert.alert('Delete', 'Delete this contact?', [
+      { text: 'Cancel' },
+      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM contacts WHERE id=?', [id])) },
+    ]);
   };
 
   return (
