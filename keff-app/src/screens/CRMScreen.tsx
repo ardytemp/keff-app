@@ -99,3 +99,4 @@ const styles = StyleSheet.create({
   item: { padding: 12, borderBottomWidth: 1, borderColor: '#ccc' },
   name: { fontWeight: 'bold', fontSize: 16 },
 });
+// (fixing imports at top - ensure FlatList is imported)
