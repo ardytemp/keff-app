@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, TextInput, Dialog, Portal, Card, Chip } from 'react-native-paper';
-import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 
 interface Invoice {
@@ -23,47 +22,45 @@ export default function InvoicesScreen() {
   const [current, setCurrent] = useState<Partial<Invoice>>({});
   const [contacts, setContacts] = useState<{id: number; name: string}[]>([]);
 
-  useEffect(() => {
-    db.withTransactionSync(() => {
-      db.executeSql('SELECT id, name FROM contacts', [], (_, { rows }) => setContacts(rows.raw()));
+  const loadContacts = () => {
+    db.transaction((tx) => {
+      tx.executeSql('SELECT id, name FROM contacts', [], (_, { rows }) => setContacts(rows.raw()));
     });
-  }, []);
+  };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      db.withTransactionSync(() => {
-        db.executeSql(`
-          SELECT i.*, c.name as contact_name FROM invoices i
-          LEFT JOIN contacts c ON i.contact_id = c.id
-          ORDER BY i.date_issued DESC
-        `, [], (_, { rows }) => setInvoices(rows.raw()));
-      });
-    }, [])
-  );
+  useEffect(() => { loadContacts(); });
+
+  const loadInvoices = () => {
+    db.transaction((tx) => {
+      tx.executeSql(`
+        SELECT i.*, c.name as contact_name FROM invoices i
+        LEFT JOIN contacts c ON i.contact_id = c.id
+        ORDER BY i.date_issued DESC
+      `, [], (_, { rows }) => setInvoices(rows.raw()));
+    });
+  };
+
+  useFocusEffect(React.useCallback(() => { loadInvoices(); }, []));
 
   const openAdd = () => { setCurrent({ status: 'draft', date_issued: new Date().toISOString().split('T')[0] }); setDialogVisible(true); };
   const openEdit = (i: Invoice) => { setCurrent({ ...i }); setDialogVisible(true); };
   const openSend = (id: number) => {
-    db.withTransactionSync(() => {
-      db.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', id]);
-    });
+    db.transaction((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['sent', id]));
   };
   const openPaid = (id: number) => {
-    db.withTransactionSync(() => {
-      db.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', id]);
-    });
+    db.transaction((tx) => tx.executeSql('UPDATE invoices SET status = ? WHERE id = ?', ['paid', id]));
   };
 
   const save = () => {
     if (!current.invoice_number || !current.amount || !current.date_issued) return Alert.alert('Error', 'Number, amount, date required');
-    db.withTransactionSync(() => {
+    db.transaction((tx) => {
       if (current.id) {
-        db.executeSql(
+        tx.executeSql(
           'UPDATE invoices SET contact_id=?, invoice_number=?, amount=?, date_issued=?, date_due=?, status=?, notes=? WHERE id=?',
           [current.contact_id, current.invoice_number, current.amount, current.date_issued, current.date_due || '', current.status, current.notes || '', current.id]
         );
       } else {
-        db.executeSql(
+        tx.executeSql(
           'INSERT INTO invoices (contact_id, invoice_number, amount, date_issued, date_due, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [current.contact_id, current.invoice_number, current.amount, current.date_issued, current.date_due || '', current.status, current.notes || '']
         );

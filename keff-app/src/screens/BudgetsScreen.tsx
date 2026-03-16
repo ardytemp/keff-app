@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, TextInput, Dialog, Portal, Card, ProgressBar } from 'react-native-paper';
-import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 
 interface Budget {
@@ -20,16 +19,16 @@ export default function BudgetsScreen() {
   const [current, setCurrent] = useState<Partial<Budget>>({});
 
   const loadBudgets = () => {
-    db.withTransactionSync(() => {
-      db.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
+    db.transaction((tx) => {
+      tx.executeSql('SELECT * FROM budgets', [], (_, { rows }) => setBudgets(rows.raw()));
     });
   };
 
   const loadSpending = () => {
     const today = new Date();
     const monthStart = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
-    db.withTransactionSync(() => {
-      db.executeSql(
+    db.transaction((tx) => {
+      tx.executeSql(
         'SELECT category, SUM(amount) as total FROM expenses WHERE date >= ? GROUP BY category',
         [monthStart],
         (_, { rows }) => {
@@ -56,11 +55,11 @@ export default function BudgetsScreen() {
 
   const save = () => {
     if (!current.category || !current.amount) return Alert.alert('Error', 'Category and amount required');
-    db.withTransactionSync(() => {
+    db.transaction((tx) => {
       if (current.id) {
-        db.executeSql('UPDATE budgets SET category=?, amount=?, period=?, start_date=? WHERE id=?', [current.category, current.amount, current.period, current.start_date || '', current.id]);
+        tx.executeSql('UPDATE budgets SET category=?, amount=?, period=?, start_date=? WHERE id=?', [current.category, current.amount, current.period, current.start_date || '', current.id]);
       } else {
-        db.executeSql('INSERT INTO budgets (category, amount, period, start_date) VALUES (?, ?, ?, ?)', [current.category, current.amount, current.period, current.start_date || '']);
+        tx.executeSql('INSERT INTO budgets (category, amount, period, start_date) VALUES (?, ?, ?, ?)', [current.category, current.amount, current.period, current.start_date || '']);
       }
     });
     loadBudgets();
@@ -70,7 +69,7 @@ export default function BudgetsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete budget?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.transaction((tx) => tx.executeSql('DELETE FROM budgets WHERE id=?', [id])) },
     ]);
   };
 

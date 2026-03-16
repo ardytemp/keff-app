@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 
 export default function DashboardScreen() {
@@ -9,16 +8,16 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      db.withTransactionSync(() => {
-        db.executeSql('SELECT SUM(amount) as total FROM expenses', [], (_, { rows }) => {
+      db.transaction((tx) => {
+        tx.executeSql('SELECT SUM(amount) as total FROM expenses', [], (_, { rows }) => {
           const totalExp = rows.item(0).total || 0;
           setStats((s) => ({ ...s, totalExpenses: totalExp }));
         });
-        db.executeSql('SELECT SUM(amount) as total FROM transactions WHERE type = "income"', [], (_, { rows }) => {
+        tx.executeSql('SELECT SUM(amount) as total FROM transactions WHERE type = "income"', [], (_, { rows }) => {
           const totalInc = rows.item(0).total || 0;
           setStats((s) => ({ ...s, totalIncome: totalInc }));
         });
-        db.executeSql('SELECT COUNT(*) as count FROM contacts', [], (_, { rows }) => {
+        tx.executeSql('SELECT COUNT(*) as count FROM contacts', [], (_, { rows }) => {
           setStats((s) => ({ ...s, contactCount: rows.item(0).count }));
         });
       });

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, TextInput, Dialog, Portal } from 'react-native-paper';
-import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 
 interface Contact {
@@ -19,37 +18,31 @@ export default function CRMScreen() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [current, setCurrent] = useState<Partial<Contact>>({});
 
-  useEffect(() => {
-    db.withTransactionSync(() => {
-      db.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
+  const loadContacts = () => {
+    db.transaction((tx) => {
+      tx.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
         setContacts(rows.raw());
       });
     });
-  }, []);
+  };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      db.withTransactionSync(() => {
-        db.executeSql('SELECT * FROM contacts ORDER BY name', [], (_, { rows }) => {
-          setContacts(rows.raw());
-        });
-      });
-    }, [])
-  );
+  useEffect(() => { loadContacts(); });
+
+  useFocusEffect(React.useCallback(() => { loadContacts(); }, []));
 
   const openAdd = () => { setCurrent({}); setDialogVisible(true); };
   const openEdit = (c: Contact) => { setCurrent({ ...c }); setDialogVisible(true); };
 
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
-    db.withTransactionSync(() => {
+    db.transaction((tx) => {
       if (current.id) {
-        db.executeSql(
+        tx.executeSql(
           'UPDATE contacts SET name=?, email=?, phone=?, company=?, notes=? WHERE id=?',
           [current.name, current.email || '', current.phone || '', current.company || '', current.notes || '', current.id]
         );
       } else {
-        db.executeSql(
+        tx.executeSql(
           'INSERT INTO contacts (name, email, phone, company, notes) VALUES (?, ?, ?, ?, ?)',
           [current.name, current.email || '', current.phone || '', current.company || '', current.notes || '']
         );
@@ -61,7 +54,7 @@ export default function CRMScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete this contact?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM contacts WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.transaction((tx) => tx.executeSql('DELETE FROM contacts WHERE id=?', [id])) },
     ]);
   };
 

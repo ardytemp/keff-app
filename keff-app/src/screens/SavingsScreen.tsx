@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Button, TextInput, Dialog, Portal, Card, ProgressBar } from 'react-native-paper';
-import * as SQLite from 'expo-sqlite';
 import { db } from '../database';
 
 interface Savings {
@@ -19,15 +18,15 @@ export default function SavingsScreen() {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [current, setCurrent] = useState<Partial<Savings>>({});
 
-  useFocusEffect(
-    React.useCallback(() => {
-      db.withTransactionSync(() => {
-        db.executeSql('SELECT * FROM savings ORDER BY deadline', [], (_, { rows }) => {
-          setSavings(rows.raw());
-        });
+  const loadSavings = () => {
+    db.transaction((tx) => {
+      tx.executeSql('SELECT * FROM savings ORDER BY deadline', [], (_, { rows }) => {
+        setSavings(rows.raw());
       });
-    }, [])
-  );
+    });
+  };
+
+  useFocusEffect(React.useCallback(() => { loadSavings(); }, []));
 
   const openAdd = () => { setCurrent({ target_amount: 0, current_amount: 0 }); setDialogVisible(true); };
   const openEdit = (s: Savings) => { setCurrent({ ...s }); setDialogVisible(true); };
@@ -35,14 +34,14 @@ export default function SavingsScreen() {
   const save = () => {
     if (!current.name) return Alert.alert('Error', 'Name required');
     if (current.target_amount == null) return Alert.alert('Error', 'Target amount required');
-    db.withTransactionSync(() => {
+    db.transaction((tx) => {
       if (current.id) {
-        db.executeSql(
+        tx.executeSql(
           'UPDATE savings SET name=?, target_amount=?, current_amount=?, deadline=?, notes=? WHERE id=?',
           [current.name, current.target_amount, current.current_amount, current.deadline || '', current.notes || '', current.id]
         );
       } else {
-        db.executeSql(
+        tx.executeSql(
           'INSERT INTO savings (name, target_amount, current_amount, deadline, notes) VALUES (?, ?, ?, ?, ?)',
           [current.name, current.target_amount, current.current_amount, current.deadline || '', current.notes || '']
         );
@@ -54,7 +53,7 @@ export default function SavingsScreen() {
   const deleteItem = (id: number) => {
     Alert.alert('Delete', 'Delete this savings goal?', [
       { text: 'Cancel' },
-      { text: 'Delete', onPress: () => db.withTransactionSync(() => db.executeSql('DELETE FROM savings WHERE id=?', [id])) },
+      { text: 'Delete', onPress: () => db.transaction((tx) => tx.executeSql('DELETE FROM savings WHERE id=?', [id])) },
     ]);
   };
 
@@ -66,8 +65,8 @@ export default function SavingsScreen() {
         onPress: (amountStr) => {
           const amount = parseFloat(amountStr || '0');
           if (amount <= 0) return;
-          db.withTransactionSync(() => {
-            db.executeSql('UPDATE savings SET current_amount = current_amount + ? WHERE id = ?', [amount, id]);
+          db.transaction((tx) => {
+            tx.executeSql('UPDATE savings SET current_amount = current_amount + ? WHERE id = ?', [amount, id]);
           });
         },
       },

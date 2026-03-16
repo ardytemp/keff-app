@@ -9,7 +9,7 @@ export async function exportToCSV(data: any[], filename: string): Promise<string
   ];
   const csvString = csvRows.join('\n');
   const fileUri = FileSystem.documentDirectory + filename;
-  await FileSystem.writeAsStringAsync(fileUri, csvString, { encoding: FileSystem.EncodingType.UTF8 });
+  await FileSystem.writeAsStringAsync(fileUri, csvString);
   return fileUri;
 }
 
