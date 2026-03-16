@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 
+const FS = FileSystem as any;
+
 export async function exportToCSV(data: any[], filename: string): Promise<string> {
   if (data.length === 0) throw new Error('No data to export');
   const headers = Object.keys(data[0]);
@@ -8,13 +10,13 @@ export async function exportToCSV(data: any[], filename: string): Promise<string
     ...data.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] ?? '')).join(','))
   ];
   const csvString = csvRows.join('\n');
-  const fileUri = FileSystem.documentDirectory + filename;
-  await FileSystem.writeAsStringAsync(fileUri, csvString);
+  const fileUri = FS.documentDirectory + filename;
+  await FS.writeAsStringAsync(fileUri, csvString);
   return fileUri;
 }
 
 export async function importFromCSV(fileUri: string): Promise<any[]> {
-  const fileContent = await FileSystem.readAsStringAsync(fileUri);
+  const fileContent = await FS.readAsStringAsync(fileUri);
   const lines = fileContent.trim().split('\n');
   if (lines.length < 2) return [];
   const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());

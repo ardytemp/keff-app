@@ -1,9 +1,10 @@
 import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabase('keff.db');
+const SQLiteAny = SQLite as any;
+const db = SQLiteAny.openDatabase('keff.db');
 
 export function initDatabase() {
-  db.transaction((tx) => {
+  db.transaction((tx: any) => {
     tx.executeSql(
       `PRAGMA journal_mode = WAL;
        CREATE TABLE IF NOT EXISTS expenses (
@@ -65,7 +66,7 @@ export function initDatabase() {
        );`,
       [],
       () => console.log('Tables created'),
-      (_, err) => { console.error('DB error', err); return false; }
+      (_, err: any) => { console.error('DB error', err); return false; }
     );
   });
 }
